@@ -1,22 +1,87 @@
 import React, { Component } from 'react';
 import { Field, reduxForm } from 'redux-form';
-
+import { Link } from 'react-router-dom';
+import { connect } from 'react-redux';
+import { createPost } from '../actions';
 
 class PostsNew extends Component {
+  renderField(field) {
+
+    const { meta: { touched, error } } = field;
+    const className = `form-group ${touched && error ? 'has-danger' : ''}`;
+
+    return (
+        <div className={className}>
+          <label>{field.label}</label>
+          <input
+            className="form-control"
+            type="text"
+            {...field.input}
+          />
+          <div className="text-help">
+            {touched ? error : ''}
+          </div>
+        </div>
+    );
+  }
+
+//push('/') automatically nav user to the root when clicking submit
+  onSubmit(values) {
+    this.props.createPost(values, () => {
+        this.props.history.push('/');
+    });
+  }
+
   render() {
+    const { handleSubmit } = this.props;
+
     return(
-      <form>
+      <form onSubmit={handleSubmit(this.onSubmit.bind(this))}>
         <Field
+          label="Title for Post"
           name="title"
-          component={}
-
+          component={this.renderField}
         />
-
+        <Field
+          label="Categories"
+          name="categories"
+          component={this.renderField}
+        />
+        <Field
+          label="Post Content"
+          name="content"
+          component={this.renderField}
+        />
+        <button type="submit" className="btn btn-primary">Submit</button>
+        <Link to="/" className="btn btn-danger">Cancel</Link>
       </form>
     );
   }
 }
 
+function validate(values) {
+  const errors = {};
+
+  //make sure user has entered some valid input in all properties
+  if(!values.title || values.title.length < 5) {
+    errors.title = "Enter a title that's at least 5 characters, please!";
+  }
+
+  if(!values.categories) {
+    errors.categories = "Please include at least one category";
+  }
+
+  if (!values.content) {
+    errors.content = "Please provide content";
+  }
+  //if errors in empty, form is fine to submit
+  //if errors has any properties, redux forms assumes form is invalid
+  return errors;
+}
+
 export default reduxForm({
+    validate,
     form: 'PostsNewForm'
-  })(PostsNew);
+  })(
+    connect(null,{ createPost })(PostsNew)
+  );
